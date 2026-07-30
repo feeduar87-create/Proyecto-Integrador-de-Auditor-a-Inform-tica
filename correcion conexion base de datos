@@ -1,0 +1,7 @@
+-- Aplicar principio de mínimo privilegio en MySQL/MariaDB
+
+CREATE USER 'app_user_readonly'@'%' IDENTIFIED BY '<password_gestionado_por_vault>';
+GRANT SELECT (nombre, identidad, saldo) ON bancasist.clientes TO 'app_user_readonly'@'%';
+REVOKE INSERT, UPDATE, DELETE, DROP ON bancasist.* FROM 'app_user_readonly'@'%';
+FLUSH PRIVILEGES;
+
