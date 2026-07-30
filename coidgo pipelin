@@ -1,0 +1,26 @@
+# .github/workflows/pipeline-seguro.yml (extracto)
+on:
+  pull_request:
+	branches: [ develop, main ]
+ 
+jobs:
+  build-and-scan:
+	runs-on: ubuntu-latest
+	steps:
+  	- uses: actions/checkout@v4
+  	- name: Instalar dependencias
+    	run: composer install --no-dev
+  	- name: Escaneo de secretos (gitleaks)
+    	run: gitleaks detect --source . --exit-code 1
+  	- name: SAST - Análisis estático (Semgrep)
+    	run: semgrep --config=p/php --error
+  	- name: SCA - Dependencias vulnerables
+    	run: composer audit
+  	- name: Pruebas de regresión de seguridad (PHPUnit)
+    	run: vendor/bin/phpunit tests/ConsultaSaldoSeguridadTest.php
+  	- name: DAST - OWASP ZAP Baseline Scan
+    	run: zap-baseline.py -t https://staging.bancasist.local -r reporte_zap.html
+  	- name: Quality Gate
+    	run: |
+      	if grep -q 'FAIL' reporte_zap.html; then exit 1; fi
+
