@@ -1,0 +1,14 @@
+<?php
+// consulta_saldo.php  (VULNERABLE)
+$id_cliente = $_GET['id_cliente'];
+ 
+$conexion = new mysqli('localhost', 'app_user', $pass, 'bancasist');
+ 
+$sql = "SELECT nombre, identidad, saldo FROM clientes " .
+   	"WHERE id_cliente = '" . $id_cliente . "'";
+ 
+$resultado = $conexion->query($sql);   // ejecución directa, sin sanear
+while ($fila = $resultado->fetch_assoc()) {
+	echo json_encode($fila);
+}
+
