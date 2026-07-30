@@ -1,0 +1,38 @@
+<?php
+// tests/ConsultaSaldoSeguridadTest.php
+use PHPUnit\Framework\TestCase;
+ 
+final class ConsultaSaldoSeguridadTest extends TestCase
+{
+	public function test_rechaza_payload_de_inyeccion_sql(): void
+	{
+    	// Arrange: payload clásico de inyección usado en el hallazgo original
+    	$_GET['id_cliente'] = "' OR '1'='1";
+ 
+    	// Act
+    	ob_start();
+    	include __DIR__ . '/../src/consulta_saldo.php';
+    	$salida = ob_get_clean();
+ 
+    	// Assert: FILTER_VALIDATE_INT rechaza el payload antes de tocar la base de datos
+    	$this->assertEquals(400, http_response_code());
+        $this->assertStringContainsString('Parámetro inválido', $salida);
+	}
+ 
+	public function test_consulta_legitima_sigue_funcionando(): void
+	{
+    	// Arrange: identificador numérico válido de un cliente de prueba
+    	$_GET['id_cliente'] = '1024';
+ 
+    	// Act
+    	ob_start();
+    	include __DIR__ . '/../src/consulta_saldo.php';
+    	$salida = ob_get_clean();
+    	$datos = json_decode($salida, true);
+ 
+    	// Assert: la funcionalidad de negocio no se degrada por el endurecimiento de seguridad
+    	$this->assertIsArray($datos);
+    	$this->assertArrayHasKey('saldo', $datos);
+	}
+}
+
