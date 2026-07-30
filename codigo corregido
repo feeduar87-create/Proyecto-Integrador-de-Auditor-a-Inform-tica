@@ -1,0 +1,34 @@
+<?php
+// consulta_saldo.php  (CORREGIDO)
+declare(strict_types=1);
+ 
+$id_cliente = filter_input(INPUT_GET, 'id_cliente', FILTER_VALIDATE_INT);
+if ($id_cliente === false || $id_cliente === null) {
+	http_response_code(400);
+	exit(json_encode(['error' => 'Parámetro inválido']));
+}
+ 
+// Credenciales fuera del repositorio: variables de entorno / gestor de secretos
+$dbPass = getenv('DB_PASS');
+$dsn = 'mysql:host=localhost;dbname=bancasist;charset=utf8mb4';
+ 
+try {
+	$pdo = new PDO($dsn, 'app_user_readonly', $dbPass, [
+    	PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    	PDO::ATTR_EMULATE_PREPARES => false,
+	]);
+ 
+	$stmt = $pdo->prepare(
+    	'SELECT nombre, identidad, saldo FROM clientes WHERE id_cliente = :id'
+	);
+	$stmt->bindParam(':id', $id_cliente, PDO::PARAM_INT);
+	$stmt->execute();
+ 
+	$fila = $stmt->fetch(PDO::FETCH_ASSOC);
+	echo json_encode($fila ?: []);
+} catch (PDOException $e) {
+	error_log('DB error [consulta_saldo]: ' . $e->getMessage()); // detalle solo en log interno
+	http_response_code(500);
+	echo json_encode(['error' => 'No fue posible procesar la solicitud']); // mensaje genérico al cliente
+}
+
